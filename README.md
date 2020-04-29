@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/Macro303/Plex-Filter/master/logo.jpg" align="left" width="120" height="120" alt="Plex Filter Logo">
+<img src="https://raw.githubusercontent.com/Macro303/Plex-Filter/master/logo.png" align="left" width="120" height="120" alt="Plex Filter Logo">
 
 # Plex Filter
 [![Version](https://img.shields.io/github/tag-pre/Macro303/Plex-Filter.svg?label=version&style=flat-square)](https://github.com/Macro303/Plex-Filter/releases)
