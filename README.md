@@ -12,7 +12,8 @@ Simple Webhook listener to filter Webhooks from Plex before sending them to Disc
  - Python 3.8.2
  - PyYAML 5.3.1
  - discord_webhook 0.7.1
- - flask-restx 0.2.0
+ - flask 1.1.2
+ - pytz 2020.1
 
 ## Execution
 1. Run the following:

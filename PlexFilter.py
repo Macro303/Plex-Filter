@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
+from typing import Dict, Any, Optional
 
 import yaml
 from discord_webhook import DiscordWebhook, DiscordEmbed
-from flask import Flask, request, abort
-from flask_restx import Api, Resource
+from flask import Flask, request, abort, jsonify
+from pytz import timezone
 
 from Logger import init_logger
 
@@ -19,166 +21,113 @@ if config_file.exists():
     with open(config_file, 'r', encoding='UTF-8') as yaml_file:
         CONFIG = yaml.safe_load(yaml_file) or {
             'Discord': None,
-            'Use Embed': True,
-            'Ignored Events': []
+            'Ignored Events': [],
+            'Timezone': 'Pacific/Auckland'
         }
 else:
     config_file.touch()
     CONFIG = {
         'Discord': None,
-        'Use Embed': True,
-        'Ignored Events': []
+        'Ignored Events': [],
+        'Timezone': 'Pacific/Auckland'
     }
 with open(config_file, 'w', encoding='UTF-8') as yaml_file:
     yaml.safe_dump(CONFIG, yaml_file)
 
 app = Flask(__name__)
-api = Api(app)
 
 
-@api.route('/plex', methods=['POST'])
-class Plex(Resource):
-    def post(self):
-        _request = request.form.to_dict(flat=True)
-        payload = json.loads(str(_request.get('payload', {})))
+@app.route('/plex', methods=['POST'])
+def plex_ep():
+    _request = request.form.to_dict(flat=True)
+    payload = json.loads(str(_request.get('payload', {})))
 
-        if payload.get('event') in CONFIG['Ignored Events']:
-            abort(400, 'Ignored Event')
+    if payload.get('event') in CONFIG['Ignored Events']:
+        abort(400, 'Ignored Event')
 
-        event_name = None
-        event_description = None
-        event_colour = None
-        event_author = None
+    event_name = clean_str(payload.get('event'))
+    if payload.get('Metadata', {}).get('type'):
+        event_name = event_name.replace('Media', clean_str(payload.get('Metadata', {}).get('type')))
+    event_description = None
+    event_colour = rgb_to_int(70, 130, 180)
 
-        content = None
+    LOGGER.debug(f"{event_name}: {payload}")
 
-        if payload.get('event') == 'library.on.deck':
-            LOGGER.info(f"Library On Deck Event: {payload}")
-            event_name = 'library.on.deck'.title()
+    if payload.get('event') == 'library.on.deck':
+        pass
+    elif payload.get('event') == 'library.new':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.pause':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.play':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.rate':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.resume':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.scrobble':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'media.stop':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+    elif payload.get('event') == 'admin.database.backup':
+        event_description = f"{payload.get('Server', {}).get('title')} Server"
+    elif payload.get('event') == 'admin.database.corrupted':
+        pass
+    elif payload.get('event') == 'device.new':
+        event_description = f"{payload.get('Player', {}).get('title')} Device"
+    elif payload.get('event') == 'playback.started':
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
 
-        elif payload.get('event') == 'library.new':
-            LOGGER.debug(f"Library New Event: {payload}")
-            event_name = f"New {payload['Metadata']['type']}".title()
+    discord_hook = DiscordWebhook(
+        url=CONFIG['Discord'],
+        username='Plex Filter',
+    )
+    discord_embed = DiscordEmbed(
+        title=event_name,
+        description=event_description,
+        color=event_colour,
+        timestamp=localize_timestamp(datetime.now())
+    )
+    discord_embed.set_footer(text=payload.get('Account', {}).get('title'),
+                             icon_url=payload.get('Account', {}).get('thumb'))
+    discord_hook.add_embed(discord_embed)
 
-            content = "Added "
-            if payload.get('Metadata', {}).get('type') == 'episode':
-                content += f"{payload.get('Metadata', {}).get('grandparentTitle')} - S{payload.get('Metadata', {}).get('parentIndex'):02}E{payload.get('Metadata', {}).get('index'):02} - {payload.get('Metadata', {}).get('title')}"
-            elif payload.get('Metadata', {}).get('type') == 'movie':
-                content += payload.get('Metadata', {}).get('title')
-            else:
-                LOGGER.error(f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-                abort(400, f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
+    discord_response = discord_hook.execute()
+    LOGGER.debug(f"Discord Request: {discord_hook.json}")
+    LOGGER.info(f"Discord Response: [{discord_response.status_code}]{discord_response.content.decode('UTF-8')}")
 
-        elif payload.get('event') == 'media.pause':
-            LOGGER.info(f"Media Pause Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} paused".title()
-
-        elif payload.get('event') == 'media.play':
-            LOGGER.debug(f"Media Play Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} played".title()
-
-            # Plain Message
-            content = f"{payload.get('Account', {}).get('title')} is playing "
-            if payload.get('Metadata', {}).get('type') == 'episode':
-                content += f"{payload.get('Metadata', {}).get('grandparentTitle')} - S{payload.get('Metadata', {}).get('parentIndex'):02}E{payload.get('Metadata', {}).get('index'):02} - {payload.get('Metadata', {}).get('title')}"
-            elif payload.get('Metadata', {}).get('type') == 'movie' \
-                    or payload.get('Metadata', {}).get('type') == 'clip':
-                content += payload.get('Metadata', {}).get('title')
-            else:
-                LOGGER.error(f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-                abort(400, f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-            # Embed Message
-            embed_title = "Media started"
-            embed_colour = get_colour_int_from_rgb(00, 80, 00)
-
-        elif payload.get('event') == 'media.rate':
-            LOGGER.info(f"Media Rate Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} rated".title()
-
-        elif payload.get('event') == 'media.resume':
-            LOGGER.info(f"Media Resume Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} resumed".title()
-
-        elif payload.get('event') == 'media.scrobble':
-            LOGGER.debug(f"Media Scrobble Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} scrobbled".title()
-
-            content = f"{payload.get('Account', {}).get('title')} scrobbled "
-            if payload.get('Metadata', {}).get('type') == 'episode':
-                content += f"{payload.get('Metadata', {}).get('grandparentTitle')} - S{payload.get('Metadata', {}).get('parentIndex'):02}E{payload.get('Metadata', {}).get('index'):02} - {payload.get('Metadata', {}).get('title')}"
-            elif payload.get('Metadata', {}).get('type') == 'movie':
-                content += f"{payload.get('Metadata', {}).get('title')} ({payload.get('Metadata', {}).get('year')})"
-            else:
-                LOGGER.error(f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-                abort(400, f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-
-        elif payload.get('event') == 'media.stop':
-            LOGGER.info(f"Media Stop Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} stopped".title()
-
-        elif payload.get('event') == 'admin.database.backup':
-            LOGGER.debug(f"Admin Database Backup Event: {payload}")
-            event_name = 'Database backup complete'.title()
-
-            content = f"Database backup of {payload.get('Server', {}).get('title')}"
-
-        elif payload.get('event') == 'admin.database.corrupted':
-            LOGGER.info(f"Admin Database Corrupted Event: {payload}")
-            event_name = 'Database corrupted'.title()
-
-        elif payload.get('event') == 'device.new':
-            LOGGER.debug(f"Device New Event: {payload}")
-            event_name = 'New device used'.title()
-
-            content = f"{payload.get('Account', {}).get('title')} has connected with a new device: {payload.get('Player', {}).get('title')}"
-
-        elif payload.get('event') == 'playback.started':
-            LOGGER.debug(f"Playback Started Event: {payload}")
-            event_name = f"{payload['Metadata']['type']} started".title()
-
-            # Plain Message
-            content = f"{payload.get('Account', {}).get('title')} started "
-            if payload.get('Metadata', {}).get('type') == 'episode':
-                content += f"{payload.get('Metadata', {}).get('grandparentTitle')} - S{payload.get('Metadata', {}).get('parentIndex'):02}E{payload.get('Metadata', {}).get('index'):02} - {payload.get('Metadata', {}).get('title')}"
-            elif payload.get('Metadata', {}).get('type') == 'movie':
-                content += payload.get('Metadata', {}).get('title')
-            else:
-                LOGGER.error(f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-                abort(400, f"Un-mapped Media type: `{payload.get('Metadata', {}).get('type')}`")
-            # Embed Message
-            embed_title = "Playback started"
-            embed_colour = get_colour_int_from_rgb(00, 80, 00)
-
-        discord_hook = DiscordWebhook(
-            url=CONFIG['Discord'],
-            username='Plex Filter',
-            content=content or f"`{payload.get('event')}` by {payload.get('Account', {}).get('title')}"
-        )
-
-        if CONFIG['Use Embed']:
-            discord_embed = DiscordEmbed(
-                title=event_name,
-                description=event_description or content,
-                colour=event_colour
-            )
-            discord_embed.set_footer(name=event_author or payload['Account']['title'])
-            discord_hook.add_embed(discord_embed)
-
-        discord_response = discord_hook.execute()
-        LOGGER.info(f"Discord: {discord_response}")
-
-        return {'success': True}
+    return jsonify({'success': True})
 
 
-@api.errorhandler
-def default_error_handler(error):
-    """Default error handler"""
-    LOGGER.error('Error Grabbed')
-    return {'message': str(error)}, getattr(error, 'code', 500)
+def clean_str(text: str) -> str:
+    if text:
+        return text.replace('.', ' ').title()
+    return text
 
 
-def get_colour_int_from_rgb(red: int, green: int, blue: int) -> int:
+def rgb_to_int(red: int, green: int, blue: int) -> int:
     return (red << 16) + (green << 8) + blue
+
+
+def parse_metadata(metadata: Dict[str, Any]) -> Optional[str]:
+    title = None
+    if metadata.get('type') == 'episode':
+        title = f"{metadata.get('grandparentTitle')} - S{metadata.get('parentIndex'):02}E{metadata.get('index'):02} - {metadata.get('title')}"
+    elif metadata.get('type') == 'movie':
+        title = metadata.get('title')
+    elif metadata.get('type') == 'clip':
+        title = metadata.get('title')
+    else:
+        LOGGER.error(f"Un-mapped Media type: `{metadata.get('type')}`")
+        abort(400, f"Un-mapped Media type: `{metadata.get('type')}`")
+    return title
+
+
+def localize_timestamp(timestamp: datetime) -> str:
+    return timezone(CONFIG['Timezone']) \
+        .localize(timestamp) \
+        .astimezone(timezone(CONFIG['Timezone'])) \
+        .isoformat(sep='T')
 
 
 if __name__ == '__main__':
