@@ -56,7 +56,7 @@ def plex_ep():
     if payload.get('event') == 'library.on.deck':
         pass
     elif payload.get('event') == 'library.new':
-        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
+        event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Server', {}).get('title')}"
     elif payload.get('event') == 'media.pause':
         event_description = f"{parse_metadata(payload.get('Metadata'))} on {payload.get('Player', {}).get('title')}"
     elif payload.get('event') == 'media.play':
