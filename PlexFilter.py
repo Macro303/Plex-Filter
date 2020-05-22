@@ -117,6 +117,8 @@ def parse_metadata(metadata: Dict[str, Any]) -> Optional[str]:
         title = metadata.get('title')
     elif metadata.get('type') == 'clip':
         title = metadata.get('title')
+    elif metadata.get('type') == 'show':
+        title = metadata.get('title')
     else:
         LOGGER.error(f"Un-mapped Media type: `{metadata.get('type')}`")
         abort(400, f"Un-mapped Media type: `{metadata.get('type')}`")
