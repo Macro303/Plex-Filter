@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 
-from Logger.ColouredFormatter import ColouredFormatter
+from Logger.coloured_formatter import ColouredFormatter
 
 TOP_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = TOP_DIR.joinpath('logs')

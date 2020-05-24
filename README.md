@@ -14,6 +14,7 @@ Simple Webhook listener to filter Webhooks from Plex before sending them to Disc
  - discord_webhook 0.8.0
  - flask 1.1.2
  - pytz 2020.1
+ - tmdbsimple 2.2.2
 
 ## Execution
 1. Run the following:
