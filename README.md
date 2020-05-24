@@ -14,20 +14,20 @@ Simple Webhook listener to filter Webhooks from Plex before sending them to Disc
  - discord_webhook 0.8.0
  - flask 1.1.2
  - pytz 2020.1
- - tmdbsimple 2.2.2
+ - requests 2.23.0
 
 ## Execution
-1. Run the following:
+1. Create a Plex Webhook to `http://localhost:6795/plex`
+2. Run the following:
     ```bash
     $ pip install -r requirements.txt
-    $ python PlexFilter.py
+    $ python -m Filter
     ```
-2. Stop the script
-2. Create a Plex Webhook to `http://localhost:6795/plex`
-3. Edit the created `config.yaml` with your Discord Webhook and any events to be ignored.
+3. Stop the script
+4. Edit the created `config.yaml` with your Discord Webhook, any events to be ignored and your [TMDB API v3 Key](https://developers.themoviedb.org/3)
 4. Run the following:
     ```bash
-   $ python PlexFilter.py
+   $ python -m Filter
     ```
 
 ## Notes
