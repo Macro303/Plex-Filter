@@ -9,7 +9,7 @@ class Plex:
     def __init__(self, data):
         self.event = data['event']
         self.server = data['Server']['title']
-        self.device = data.get('Player', {})['title']
+        self.device = data.get('Player', {}).get('title')
         self.account_name = data['Account']['title']
         self.account_thumb = data['Account']['thumb']
 
@@ -29,7 +29,7 @@ class Plex:
 class Media(Plex):
     def __init__(self, data):
         super(Media, self).__init__(data)
-        metadata = data.get('Metadata', {})
+        metadata = data.get['Metadata']
         self.media_type = metadata['type']
         self.media_title = metadata['title']
         self.summary = metadata['summary']
@@ -53,7 +53,7 @@ class Media(Plex):
 class Movie(Media):
     def __init__(self, data):
         super(Movie, self).__init__(data)
-        metadata = data.get('Metadata', {})
+        metadata = data.get['Metadata']
         self.year = metadata['year']
 
     def __str__(self) -> str:
@@ -66,7 +66,7 @@ class Movie(Media):
 class Clip(Media):
     def __init__(self, data):
         super(Clip, self).__init__(data)
-        metadata = data.get('Metadata', {})
+        metadata = data.get['Metadata']
         self.media_subtype = metadata['subtype']
 
     def get_media_type(self) -> str:
@@ -93,7 +93,7 @@ class Show(Media):
 class Episode(Media):
     def __init__(self, data):
         super(Episode, self).__init__(data)
-        metadata = data.get('Metadata', {})
+        metadata = data.get['Metadata']
         self.show_title = metadata['grandparentTitle']
         self.season_index = metadata['parentIndex']
         self.episode_index = metadata['index']
