@@ -27,6 +27,8 @@ def plex_ep():
     if plex_request.media_type == 'movie':
         tmdb = search_movie(CONFIG['TMDB API Key'], plex_request)
     elif plex_request.media_type == 'episode':
+        tmdb = search_episode(CONFIG['TMDB API Key'], plex_request)
+    elif plex_request.media_type == 'show':
         tmdb = search_tv_show(CONFIG['TMDB API Key'], plex_request)
     else:
         tmdb = None
