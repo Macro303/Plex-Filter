@@ -74,7 +74,7 @@ def search_movie(tmdb_key: Optional[str], movie) -> Optional[Movie]:
     url = f"{API_URL}/search/movie?api_key={tmdb_key}&query={movie.media_title}&year={movie.year}"
     response = request_json(url=url)
     LOGGER.debug(f"Movie Search Response: {response}")
-    if response:
+    if response and response['results']:
         return Movie(response['results'][0])
     return None
 
@@ -85,7 +85,7 @@ def search_episode(tmdb_key: Optional[str], episode) -> Optional[TvShow]:
     url = f"{API_URL}/search/tv?api_key={tmdb_key}&query={episode.show_title}"
     response = request_json(url=url)
     LOGGER.debug(f"Tv Show Search Response: {response}")
-    if response:
+    if response and response['results']:
         return TvShow(response['results'][0])
     return None
 
@@ -96,6 +96,6 @@ def search_tv_show(tmdb_key: Optional[str], show) -> Optional[TvShow]:
     url = f"{API_URL}/search/tv?api_key={tmdb_key}&query={show.media_title}"
     response = request_json(url=url)
     LOGGER.debug(f"Tv Show Search Response: {response}")
-    if response:
+    if response and response['results']:
         return TvShow(response['results'][0])
     return None
