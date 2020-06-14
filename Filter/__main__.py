@@ -6,7 +6,8 @@ from datetime import datetime
 from discord_webhook import DiscordWebhook, DiscordEmbed
 from flask import Flask, request, abort, jsonify
 
-from Filter import CONFIG, parse_payload, rgb_to_int, localize_timestamp, search_movie, search_tv_show
+from Filter import CONFIG, parse_payload, rgb_to_int, localize_timestamp, search_movie, search_tv_show, \
+    search_episode, Media
 from Logger import init_logger
 
 LOGGER = logging.getLogger(__name__)
@@ -24,14 +25,14 @@ def plex_ep():
         abort(400, 'Ignored Event')
 
     plex_request = parse_payload(payload)
-    if plex_request.media_type == 'movie':
-        tmdb = search_movie(CONFIG['TMDB API Key'], plex_request)
-    elif plex_request.media_type == 'episode':
-        tmdb = search_episode(CONFIG['TMDB API Key'], plex_request)
-    elif plex_request.media_type == 'show':
-        tmdb = search_tv_show(CONFIG['TMDB API Key'], plex_request)
-    else:
-        tmdb = None
+    tmdb = None
+    if isinstance(plex_request, Media):
+        if plex_request.media_type == 'movie':
+            tmdb = search_movie(CONFIG['TMDB API Key'], plex_request)
+        elif plex_request.media_type == 'episode':
+            tmdb = search_episode(CONFIG['TMDB API Key'], plex_request)
+        elif plex_request.media_type == 'show':
+            tmdb = search_tv_show(CONFIG['TMDB API Key'], plex_request)
 
     discord_hook = DiscordWebhook(
         url=CONFIG['Discord'],

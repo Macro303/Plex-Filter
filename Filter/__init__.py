@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 import logging
-import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, Any
 
-import requests
 import yaml
 from pytz import timezone
-
-from Filter.plex import parse_payload, Movie, Episode
-from Filter.tmdb_wrapper import search_movie, search_tv_show
 
 TOP_DIR = Path(__file__).resolve().parent.parent
 

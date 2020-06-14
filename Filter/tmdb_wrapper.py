@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import logging
-from typing import Optional, Dict, Any
 import re
+from typing import Optional, Dict, Any
+
 import requests
 
 LOGGER = logging.getLogger(__name__)
@@ -23,8 +24,10 @@ class Movie:
         self.release_date = data['release_date']
         self.image_path = data['poster_path']
 
-    def get_image_url(self) -> str:
-        return IMAGE_URL + self.image_path
+    def get_image_url(self) -> Optional[str]:
+        if self.image_path:
+            return IMAGE_URL + self.image_path
+        return None
 
     def get_web_url(self) -> str:
         return f"{WEB_URL}/movie/{self.id}-{self.name.replace(' ', '-')}"
@@ -37,8 +40,10 @@ class TvShow:
         self.description = data['overview']
         self.image_path = data['poster_path']
 
-    def get_image_url(self) -> str:
-        return IMAGE_URL + self.image_path
+    def get_image_url(self) -> Optional[str]:
+        if self.image_path:
+            return IMAGE_URL + self.image_path
+        return None
 
     def get_web_url(self) -> str:
         return f"{WEB_URL}/tv/{self.id}-{self.name.replace(' ', '-')}"
