@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/Macro303/Plex-Filter/master/logo.png" align="left" width="120" height="120" alt="Plex Filter Logo">
+<img src="https://raw.githubusercontent.com/Macro303/Plex-Filter/main/logo.png" align="left" width="120" height="120" alt="Plex Filter Logo">
 
 # Plex Filter
 [![Version](https://img.shields.io/github/tag-pre/Macro303/Plex-Filter.svg?label=version&style=flat-square)](https://github.com/Macro303/Plex-Filter/releases)
@@ -14,7 +14,7 @@ Simple Webhook listener to filter Webhooks from Plex before sending them to Disc
  - discord_webhook 0.8.0
  - flask 1.1.2
  - pytz 2020.1
- - requests 2.23.0
+ - requests 2.24.0
 
 ## Execution
 1. Create a Plex Webhook to `http://localhost:6795/plex`
@@ -44,3 +44,6 @@ The current known events are:
  - admin.database.corrupted
  - device.new
  - playback.started
+
+## Socials
+[![Discord | The Playground](https://discord.com/api/v6/guilds/618581423070117932/widget.png?style=banner2)](https://discord.gg/nqGMeGg)
