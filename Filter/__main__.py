@@ -49,8 +49,9 @@ def plex_ep():
         url=(tmdb.get_image_url() if tmdb else None)
     )
     footers = []
-    if plex_request.account_name:
-        footers.append(plex_request.account_name)
+    if plex_request.event not in ['library.new', 'admin.database.backup']:
+        if plex_request.account_name:
+            footers.append(plex_request.account_name)
     if plex_request.server:
         footers.append(plex_request.server)
     if plex_request.device:
