@@ -50,16 +50,19 @@ def plex_ep():
         url=(tmdb.get_image_url() if tmdb else None)
     )
     footers = []
-    if plex_request.event not in ['library.new', 'admin.database.backup']:
+    footer_image = None
+    if plex_request.event not in ['library.new', 'admin.database.backup', 'admin.database.corrupted']:
         if plex_request.account_name:
             footers.append(plex_request.account_name)
+        if plex_request.device:
+            footers.append(plex_request.device)
+        if plex_request.account_thumb:
+            footer_image = plex_request.account_thumb
     if plex_request.server:
         footers.append(plex_request.server)
-    if plex_request.device:
-        footers.append(plex_request.device)
     discord_embed.set_footer(
         text=' | '.join(footers),
-        icon_url=plex_request.account_thumb
+        icon_url=footer_image
     )
     discord_hook.add_embed(discord_embed)
 
